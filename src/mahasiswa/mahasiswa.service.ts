@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+
 import { Injectable } from '@nestjs/common';
 import { CreateMahasiswaDto } from './dto/create-mahasiswa.dto';
 import { UpdateMahasiswaDto } from './dto/update-mahasiswa.dto';
