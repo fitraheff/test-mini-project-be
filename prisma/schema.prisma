@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model MataKuliah {
+  kode        String    @id @db.VarChar(10)
+  nama        String    @db.VarChar(255)
+  sks         Int
+  semester    Int
+
+  jadwal      Jadwal[]
+
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Dosen {
+  nidn        String    @id @db.VarChar(20)
+  nama        String    @db.VarChar(255)
+  //email       String    @unique @db.VarChar(255)
+
+  jadwal      Jadwal[]
+
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Mahasiswa {
+  nim         String    @id @db.VarChar(20)
+  nama        String    @db.VarChar(255)
+  //prodi       String  @db.VarChar(255)
+
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model Jadwal{
+  id         String     @id @default(cuid())
+  hari       String     @db.VarChar(255)
+  jamMulai   DateTime
+  jamSelesai DateTime
+  ruangan    String     @db.VarChar(50)
+
+  maktul     MataKuliah @relation(fields: [kode], references: [kode])
+  kode       String
+
+  dosen      Dosen      @relation(fields: [nidn], references: [nidn])
+  nidn       String
+
+  @@unique([hari, ruangan, jamMulai])
+
+  createdAt  DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @db.Timestamptz(3)
+}
+
+// prisma/schema.prisma
+
+model Article {
+  id          Int      @id @default(autoincrement())
+  title       String   @unique
+  description String?
+  body        String
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
