@@ -9,6 +9,7 @@ import {
   Patch,
   Param,
   Delete,
+  NotFoundException,
 } from '@nestjs/common';
 import { DosenService } from './dosen.service';
 import { CreateDosenDto } from './dto/create-dosen.dto';
@@ -35,8 +36,12 @@ export class DosenController {
 
   @Get(':id')
   @ApiOkResponse({ type: DosenEntity })
-  findOne(@Param('id') id: string) {
-    return this.dosenService.findOne(id);
+  async findOne(@Param('id') id: string) {
+    const dosen = await this.dosenService.findOne(id);
+    if (!dosen) {
+      throw new NotFoundException('Dosen not found');
+    }
+    return dosen;
   }
 
   @Patch(':id')
