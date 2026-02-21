@@ -8,7 +8,7 @@ export class MahasiswaService {
   constructor(private prisma: PrismaService) {}
 
   create(createMahasiswaDto: CreateMahasiswaDto) {
-    return 'This action adds a new mahasiswa';
+    return this.prisma.mahasiswa.create({ data: createMahasiswaDto });
   }
 
   findAll() {
@@ -19,11 +19,14 @@ export class MahasiswaService {
     return this.prisma.mahasiswa.findUnique({ where: { nim: id } });
   }
 
-  update(id: number, updateMahasiswaDto: UpdateMahasiswaDto) {
-    return `This action updates a #${id} mahasiswa`;
+  update(id: string, updateMahasiswaDto: UpdateMahasiswaDto) {
+    return this.prisma.mahasiswa.update({
+      where: { nim: id },
+      data: updateMahasiswaDto,
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} mahasiswa`;
+  remove(id: string) {
+    return this.prisma.mahasiswa.delete({ where: { nim: id } });
   }
 }
