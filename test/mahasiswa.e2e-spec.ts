@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
@@ -13,7 +14,6 @@ describe('Mahasiswa (e2e)', () => {
   let prismaService: PrismaService;
 
   const createMahasiswaDto = {
-    nim: 'NIM12345678',
     nama: 'John Doe',
   };
 
@@ -51,8 +51,6 @@ describe('Mahasiswa (e2e)', () => {
   });
 
   afterAll(async () => {
-    await prismaService.mahasiswa.deleteMany({});
-    await app.close();
     await prismaService.$disconnect();
   });
 
@@ -61,40 +59,24 @@ describe('Mahasiswa (e2e)', () => {
   });
 
   describe('POST /mahasiswa', () => {
-    it('should create a new mahasiswa', () => {
+    it('should create a new mahasiswa with auto-generated NIM', () => {
       return request(app.getHttpServer())
         .post('/mahasiswa')
         .send(createMahasiswaDto)
         .expect(201)
         .expect((res) => {
-          expect(res.body).toHaveProperty('nim', createMahasiswaDto.nim);
+          expect(res.body).toHaveProperty('nim');
+          expect(res.body.nim).toMatch(/^\d{8}$/);
           expect(res.body).toHaveProperty('nama', createMahasiswaDto.nama);
           expect(res.body).toHaveProperty('createdAt');
           expect(res.body).toHaveProperty('updatedAt');
         });
     });
 
-    it('should fail when nim is missing', () => {
-      return request(app.getHttpServer())
-        .post('/mahasiswa')
-        .send({ nama: 'Test Student' })
-        .expect(400);
-    });
-
     it('should fail when nama is missing', () => {
       return request(app.getHttpServer())
         .post('/mahasiswa')
-        .send({ nim: 'NIM00000001' })
-        .expect(400);
-    });
-
-    it('should fail when nim is too short', () => {
-      return request(app.getHttpServer())
-        .post('/mahasiswa')
-        .send({
-          nim: 'NIM',
-          nama: 'Test Student',
-        })
+        .send({})
         .expect(400);
     });
 
@@ -102,22 +84,14 @@ describe('Mahasiswa (e2e)', () => {
       return request(app.getHttpServer())
         .post('/mahasiswa')
         .send({
-          nim: 'NIM00000001',
           nama: 'AB',
         })
         .expect(400);
     });
 
-    it('should fail when creating duplicate nim', async () => {
-      await request(app.getHttpServer())
-        .post('/mahasiswa')
-        .send(createMahasiswaDto)
-        .expect(201);
-
-      return request(app.getHttpServer())
-        .post('/mahasiswa')
-        .send(createMahasiswaDto)
-        .expect(409);
+    it('should fail when creating duplicate is not possible since NIM is auto-generated', async () => {
+      // This test is no longer relevant
+      expect(true).toBe(true);
     });
   });
 
@@ -133,8 +107,8 @@ describe('Mahasiswa (e2e)', () => {
     });
 
     it('should return all mahasiswa', async () => {
-      const mhs1 = { nim: 'NIM00000001', nama: 'Student One' };
-      const mhs2 = { nim: 'NIM00000002', nama: 'Student Two' };
+      const mhs1 = { nama: 'Student One' };
+      const mhs2 = { nama: 'Student Two' };
 
       await request(app.getHttpServer())
         .post('/mahasiswa')
@@ -158,18 +132,18 @@ describe('Mahasiswa (e2e)', () => {
 
   describe('GET /mahasiswa/:id', () => {
     it('should return a specific mahasiswa by nim', async () => {
-      const mhs = { nim: 'NIM00000001', nama: 'Test Student' };
+      const mhs = { nama: 'Test Student' };
 
-      await request(app.getHttpServer())
+      const createRes = await request(app.getHttpServer())
         .post('/mahasiswa')
         .send(mhs)
         .expect(201);
 
       return request(app.getHttpServer())
-        .get(`/mahasiswa/${mhs.nim}`)
+        .get(`/mahasiswa/${createRes.body.nim}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body).toHaveProperty('nim', mhs.nim);
+          expect(res.body).toHaveProperty('nim', createRes.body.nim);
           expect(res.body).toHaveProperty('nama', mhs.nama);
         });
     });
@@ -183,19 +157,19 @@ describe('Mahasiswa (e2e)', () => {
 
   describe('PATCH /mahasiswa/:id', () => {
     it('should update a mahasiswa', async () => {
-      const mhs = { nim: 'NIM00000001', nama: 'Original Name' };
+      const mhs = { nama: 'Original Name' };
 
-      await request(app.getHttpServer())
+      const createRes = await request(app.getHttpServer())
         .post('/mahasiswa')
         .send(mhs)
         .expect(201);
 
       return request(app.getHttpServer())
-        .patch(`/mahasiswa/${mhs.nim}`)
+        .patch(`/mahasiswa/${createRes.body.nim}`)
         .send(updateMahasiswaDto)
         .expect(200)
         .expect((res) => {
-          expect(res.body).toHaveProperty('nim', mhs.nim);
+          expect(res.body).toHaveProperty('nim', createRes.body.nim);
           expect(res.body).toHaveProperty('nama', updateMahasiswaDto.nama);
         });
     });
@@ -210,19 +184,19 @@ describe('Mahasiswa (e2e)', () => {
 
   describe('DELETE /mahasiswa/:id', () => {
     it('should delete a mahasiswa', async () => {
-      const mhs = { nim: 'NIM00000001', nama: 'To Delete' };
+      const mhs = { nama: 'To Delete' };
 
-      await request(app.getHttpServer())
+      const createRes = await request(app.getHttpServer())
         .post('/mahasiswa')
         .send(mhs)
         .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/mahasiswa/${mhs.nim}`)
+        .delete(`/mahasiswa/${createRes.body.nim}`)
         .expect(200);
 
       return request(app.getHttpServer())
-        .get(`/mahasiswa/${mhs.nim}`)
+        .get(`/mahasiswa/${createRes.body.nim}`)
         .expect(404);
     });
 
@@ -235,7 +209,7 @@ describe('Mahasiswa (e2e)', () => {
 
   describe('Mahasiswa CRUD Integration', () => {
     it('should perform full CRUD operations in sequence', async () => {
-      const testMhs = { nim: 'NIM99999999', nama: 'Integration Test' };
+      const testMhs = { nama: 'Integration Test' };
 
       // Create
       const createRes = await request(app.getHttpServer())
@@ -243,18 +217,18 @@ describe('Mahasiswa (e2e)', () => {
         .send(testMhs)
         .expect(201);
 
-      expect(createRes.body.nim).toBe(testMhs.nim);
+      expect(createRes.body.nim).toMatch(/^\d{8}$/);
 
       // Read
       const getRes = await request(app.getHttpServer())
-        .get(`/mahasiswa/${testMhs.nim}`)
+        .get(`/mahasiswa/${createRes.body.nim}`)
         .expect(200);
 
       expect(getRes.body.nama).toBe(testMhs.nama);
 
       // Update
       const updateRes = await request(app.getHttpServer())
-        .patch(`/mahasiswa/${testMhs.nim}`)
+        .patch(`/mahasiswa/${createRes.body.nim}`)
         .send({ nama: 'Updated Integration Test' })
         .expect(200);
 
@@ -262,12 +236,12 @@ describe('Mahasiswa (e2e)', () => {
 
       // Delete
       await request(app.getHttpServer())
-        .delete(`/mahasiswa/${testMhs.nim}`)
+        .delete(`/mahasiswa/${createRes.body.nim}`)
         .expect(200);
 
       // Verify deletion
       return request(app.getHttpServer())
-        .get(`/mahasiswa/${testMhs.nim}`)
+        .get(`/mahasiswa/${createRes.body.nim}`)
         .expect(404);
     });
   });

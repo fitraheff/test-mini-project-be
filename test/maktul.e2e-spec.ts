@@ -13,7 +13,6 @@ describe('Maktul (e2e)', () => {
   let prismaService: PrismaService;
 
   const createMaktulDto = {
-    kode: 'MK001',
     nama: 'Pemrograman Dasar',
     sks: 3,
     semester: 1,
@@ -54,8 +53,7 @@ describe('Maktul (e2e)', () => {
   });
 
   afterAll(async () => {
-    await prismaService.mataKuliah.deleteMany({});
-    await app.close();
+    await prismaService.$disconnect();
   });
 
   afterEach(async () => {
@@ -63,13 +61,14 @@ describe('Maktul (e2e)', () => {
   });
 
   describe('POST /maktul', () => {
-    it('should create a new mata kuliah', () => {
+    it('should create a new mata kuliah with auto-generated kode', () => {
       return request(app.getHttpServer())
         .post('/maktul')
         .send(createMaktulDto)
         .expect(201)
         .expect((res) => {
-          expect(res.body).toHaveProperty('kode', createMaktulDto.kode);
+          expect(res.body).toHaveProperty('kode');
+          expect(res.body.kode).toMatch(/^MK\d{4}$/);
           expect(res.body).toHaveProperty('nama', createMaktulDto.nama);
           expect(res.body).toHaveProperty('sks', createMaktulDto.sks);
           expect(res.body).toHaveProperty('semester', createMaktulDto.semester);
@@ -78,22 +77,10 @@ describe('Maktul (e2e)', () => {
         });
     });
 
-    it('should fail when kode is missing', () => {
-      return request(app.getHttpServer())
-        .post('/maktul')
-        .send({
-          nama: 'Mata Kuliah Test',
-          sks: 3,
-          semester: 1,
-        })
-        .expect(400);
-    });
-
     it('should fail when nama is missing', () => {
       return request(app.getHttpServer())
         .post('/maktul')
         .send({
-          kode: 'MK001',
           sks: 3,
           semester: 1,
         })
@@ -104,7 +91,6 @@ describe('Maktul (e2e)', () => {
       return request(app.getHttpServer())
         .post('/maktul')
         .send({
-          kode: 'MK001',
           nama: 'Mata Kuliah Test',
           semester: 1,
         })
@@ -115,35 +101,10 @@ describe('Maktul (e2e)', () => {
       return request(app.getHttpServer())
         .post('/maktul')
         .send({
-          kode: 'MK001',
           nama: 'Mata Kuliah Test',
           sks: 3,
         })
         .expect(400);
-    });
-
-    it('should fail when kode is too short', () => {
-      return request(app.getHttpServer())
-        .post('/maktul')
-        .send({
-          kode: 'MK',
-          nama: 'Mata Kuliah Test',
-          sks: 3,
-          semester: 1,
-        })
-        .expect(400);
-    });
-
-    it('should fail when creating duplicate kode', async () => {
-      await request(app.getHttpServer())
-        .post('/maktul')
-        .send(createMaktulDto)
-        .expect(201);
-
-      return request(app.getHttpServer())
-        .post('/maktul')
-        .send(createMaktulDto)
-        .expect(409);
     });
   });
 
@@ -160,13 +121,11 @@ describe('Maktul (e2e)', () => {
 
     it('should return all mata kuliah', async () => {
       const mk1 = {
-        kode: 'MK001',
         nama: 'Pemrograman Dasar',
         sks: 3,
         semester: 1,
       };
       const mk2 = {
-        kode: 'MK002',
         nama: 'Struktur Data',
         sks: 3,
         semester: 2,
@@ -189,19 +148,21 @@ describe('Maktul (e2e)', () => {
   describe('GET /maktul/:id', () => {
     it('should return a specific mata kuliah by kode', async () => {
       const mk = {
-        kode: 'MK001',
         nama: 'Pemrograman Dasar',
         sks: 3,
         semester: 1,
       };
 
-      await request(app.getHttpServer()).post('/maktul').send(mk).expect(201);
+      const createRes = await request(app.getHttpServer())
+        .post('/maktul')
+        .send(mk)
+        .expect(201);
 
       return request(app.getHttpServer())
-        .get(`/maktul/${mk.kode}`)
+        .get(`/maktul/${createRes.body.kode}`)
         .expect(200)
         .expect((res) => {
-          expect(res.body).toHaveProperty('kode', mk.kode);
+          expect(res.body).toHaveProperty('kode', createRes.body.kode);
           expect(res.body).toHaveProperty('nama', mk.nama);
           expect(res.body).toHaveProperty('sks', mk.sks);
         });
@@ -217,20 +178,22 @@ describe('Maktul (e2e)', () => {
   describe('PATCH /maktul/:id', () => {
     it('should update a mata kuliah', async () => {
       const mk = {
-        kode: 'MK001',
         nama: 'Original Name',
         sks: 3,
         semester: 1,
       };
 
-      await request(app.getHttpServer()).post('/maktul').send(mk).expect(201);
+      const createRes = await request(app.getHttpServer())
+        .post('/maktul')
+        .send(mk)
+        .expect(201);
 
       return request(app.getHttpServer())
-        .patch(`/maktul/${mk.kode}`)
+        .patch(`/maktul/${createRes.body.kode}`)
         .send(updateMaktulDto)
         .expect(200)
         .expect((res) => {
-          expect(res.body).toHaveProperty('kode', mk.kode);
+          expect(res.body).toHaveProperty('kode', createRes.body.kode);
           expect(res.body).toHaveProperty('nama', updateMaktulDto.nama);
           expect(res.body).toHaveProperty('sks', updateMaktulDto.sks);
         });
@@ -238,16 +201,18 @@ describe('Maktul (e2e)', () => {
 
     it('should partially update mata kuliah', async () => {
       const mk = {
-        kode: 'MK002',
         nama: 'Original Name',
         sks: 3,
         semester: 2,
       };
 
-      await request(app.getHttpServer()).post('/maktul').send(mk).expect(201);
+      const createRes = await request(app.getHttpServer())
+        .post('/maktul')
+        .send(mk)
+        .expect(201);
 
       return request(app.getHttpServer())
-        .patch(`/maktul/${mk.kode}`)
+        .patch(`/maktul/${createRes.body.kode}`)
         .send({ sks: 4 })
         .expect(200)
         .expect((res) => {
@@ -267,19 +232,23 @@ describe('Maktul (e2e)', () => {
   describe('DELETE /maktul/:id', () => {
     it('should delete a mata kuliah', async () => {
       const mk = {
-        kode: 'MK001',
         nama: 'To Delete',
         sks: 3,
         semester: 1,
       };
 
-      await request(app.getHttpServer()).post('/maktul').send(mk).expect(201);
+      const createRes = await request(app.getHttpServer())
+        .post('/maktul')
+        .send(mk)
+        .expect(201);
 
       await request(app.getHttpServer())
-        .delete(`/maktul/${mk.kode}`)
+        .delete(`/maktul/${createRes.body.kode}`)
         .expect(200);
 
-      return request(app.getHttpServer()).get(`/maktul/${mk.kode}`).expect(404);
+      return request(app.getHttpServer())
+        .get(`/maktul/${createRes.body.kode}`)
+        .expect(404);
     });
 
     it('should return 404 when deleting non-existent mata kuliah', () => {
@@ -292,7 +261,6 @@ describe('Maktul (e2e)', () => {
   describe('Maktul CRUD Integration', () => {
     it('should perform full CRUD operations in sequence', async () => {
       const testMk = {
-        kode: 'MK999',
         nama: 'Integration Test Course',
         sks: 3,
         semester: 1,
@@ -304,18 +272,18 @@ describe('Maktul (e2e)', () => {
         .send(testMk)
         .expect(201);
 
-      expect(createRes.body.kode).toBe(testMk.kode);
+      expect(createRes.body.kode).toMatch(/^MK\d{4}$/);
 
       // Read
       const getRes = await request(app.getHttpServer())
-        .get(`/maktul/${testMk.kode}`)
+        .get(`/maktul/${createRes.body.kode}`)
         .expect(200);
 
       expect(getRes.body.nama).toBe(testMk.nama);
 
       // Update
       const updateRes = await request(app.getHttpServer())
-        .patch(`/maktul/${testMk.kode}`)
+        .patch(`/maktul/${createRes.body.kode}`)
         .send({ nama: 'Updated Integration Test' })
         .expect(200);
 
@@ -323,12 +291,12 @@ describe('Maktul (e2e)', () => {
 
       // Delete
       await request(app.getHttpServer())
-        .delete(`/maktul/${testMk.kode}`)
+        .delete(`/maktul/${createRes.body.kode}`)
         .expect(200);
 
       // Verify deletion
       return request(app.getHttpServer())
-        .get(`/maktul/${testMk.kode}`)
+        .get(`/maktul/${createRes.body.kode}`)
         .expect(404);
     });
   });

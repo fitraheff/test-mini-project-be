@@ -13,13 +13,16 @@ describe('Jadwal (e2e)', () => {
   let app: INestApplication<App>;
   let prismaService: PrismaService;
 
+  let maktulKode: string;
+  let dosenNidn: string;
+
   const createJadwalDto = {
     hari: 'Senin',
     jamMulai: '2026-02-23T08:00:00Z',
     jamSelesai: '2026-02-23T10:00:00Z',
     ruangan: 'Ruang A101',
-    kode: 'MK001',
-    nidn: 'NIDN12345',
+    kode: '',
+    nidn: '',
   };
 
   const updateJadwalDto = {
@@ -55,29 +58,25 @@ describe('Jadwal (e2e)', () => {
     prismaService = moduleFixture.get<PrismaService>(PrismaService);
     await app.init();
 
-    // Create required references (maktul and dosen)
-    await prismaService.mataKuliah.create({
-      data: {
-        kode: 'MK001',
-        nama: 'Test Course',
-        sks: 3,
-        semester: 1,
-      },
-    });
+    // Create required references with auto-generated IDs
+    const dosenRes = await request(app.getHttpServer())
+      .post('/dosen')
+      .send({ nama: 'Dr. Test' });
+    dosenNidn = dosenRes.body.nidn;
 
-    await prismaService.dosen.create({
-      data: {
-        nidn: 'NIDN12345',
-        nama: 'Dr. Test',
-      },
+    const maktulRes = await request(app.getHttpServer()).post('/maktul').send({
+      nama: 'Test Course',
+      sks: 3,
+      semester: 1,
     });
+    maktulKode = maktulRes.body.kode;
+
+    // Set the auto-generated IDs in createJadwalDto
+    createJadwalDto.nidn = dosenNidn;
+    createJadwalDto.kode = maktulKode;
   });
 
   afterAll(async () => {
-    await prismaService.jadwal.deleteMany({});
-    await prismaService.mataKuliah.deleteMany({});
-    await prismaService.dosen.deleteMany({});
-    await app.close();
     await prismaService.$disconnect();
   });
 
@@ -94,6 +93,8 @@ describe('Jadwal (e2e)', () => {
         .expect((res) => {
           expect(res.body).toHaveProperty('hari', createJadwalDto.hari);
           expect(res.body).toHaveProperty('ruangan', createJadwalDto.ruangan);
+          expect(res.body).toHaveProperty('kode', maktulKode);
+          expect(res.body).toHaveProperty('nidn', dosenNidn);
           expect(res.body).toHaveProperty('id');
           expect(res.body).toHaveProperty('createdAt');
           expect(res.body).toHaveProperty('updatedAt');
@@ -107,8 +108,8 @@ describe('Jadwal (e2e)', () => {
           jamMulai: '2026-02-23T08:00:00Z',
           jamSelesai: '2026-02-23T10:00:00Z',
           ruangan: 'Ruang A101',
-          kode: 'MK001',
-          nidn: 'NIDN12345',
+          kode: maktulKode,
+          nidn: dosenNidn,
         })
         .expect(400);
     });
@@ -120,8 +121,8 @@ describe('Jadwal (e2e)', () => {
           hari: 'Senin',
           jamSelesai: '2026-02-23T10:00:00Z',
           ruangan: 'Ruang A101',
-          kode: 'MK001',
-          nidn: 'NIDN12345',
+          kode: maktulKode,
+          nidn: dosenNidn,
         })
         .expect(400);
     });
@@ -133,8 +134,8 @@ describe('Jadwal (e2e)', () => {
           hari: 'Senin',
           jamMulai: '2026-02-23T08:00:00Z',
           ruangan: 'Ruang A101',
-          kode: 'MK001',
-          nidn: 'NIDN12345',
+          kode: maktulKode,
+          nidn: dosenNidn,
         })
         .expect(400);
     });
@@ -146,8 +147,8 @@ describe('Jadwal (e2e)', () => {
           hari: 'Senin',
           jamMulai: '2026-02-23T08:00:00Z',
           jamSelesai: '2026-02-23T10:00:00Z',
-          kode: 'MK001',
-          nidn: 'NIDN12345',
+          kode: maktulKode,
+          nidn: dosenNidn,
         })
         .expect(400);
     });
@@ -160,8 +161,8 @@ describe('Jadwal (e2e)', () => {
           jamMulai: '2026-02-23T08:00:00Z',
           jamSelesai: '2026-02-23T10:00:00Z',
           ruangan: 'Ruang A101',
-          kode: 'MK001',
-          nidn: 'NIDN12345',
+          kode: maktulKode,
+          nidn: dosenNidn,
         })
         .expect(400);
     });
@@ -184,8 +185,8 @@ describe('Jadwal (e2e)', () => {
         jamMulai: '2026-02-23T08:00:00Z',
         jamSelesai: '2026-02-23T10:00:00Z',
         ruangan: 'Ruang A101',
-        kode: 'MK001',
-        nidn: 'NIDN12345',
+        kode: maktulKode,
+        nidn: dosenNidn,
       };
 
       const jadwal2 = {
@@ -193,8 +194,8 @@ describe('Jadwal (e2e)', () => {
         jamMulai: '2026-02-24T10:00:00Z',
         jamSelesai: '2026-02-24T12:00:00Z',
         ruangan: 'Ruang B202',
-        kode: 'MK001',
-        nidn: 'NIDN12345',
+        kode: maktulKode,
+        nidn: dosenNidn,
       };
 
       await request(app.getHttpServer())
@@ -224,8 +225,8 @@ describe('Jadwal (e2e)', () => {
         jamMulai: '2026-02-23T08:00:00Z',
         jamSelesai: '2026-02-23T10:00:00Z',
         ruangan: 'Ruang A101',
-        kode: 'MK001',
-        nidn: 'NIDN12345',
+        kode: maktulKode,
+        nidn: dosenNidn,
       };
 
       const createRes = await request(app.getHttpServer())
@@ -259,8 +260,8 @@ describe('Jadwal (e2e)', () => {
         jamMulai: '2026-02-23T08:00:00Z',
         jamSelesai: '2026-02-23T10:00:00Z',
         ruangan: 'Ruang A101',
-        kode: 'MK001',
-        nidn: 'NIDN12345',
+        kode: maktulKode,
+        nidn: dosenNidn,
       };
 
       const createRes = await request(app.getHttpServer())
@@ -287,8 +288,8 @@ describe('Jadwal (e2e)', () => {
         jamMulai: '2026-02-23T08:00:00Z',
         jamSelesai: '2026-02-23T10:00:00Z',
         ruangan: 'Ruang A101',
-        kode: 'MK001',
-        nidn: 'NIDN12345',
+        kode: maktulKode,
+        nidn: dosenNidn,
       };
 
       const createRes = await request(app.getHttpServer())
@@ -323,8 +324,8 @@ describe('Jadwal (e2e)', () => {
         jamMulai: '2026-02-23T08:00:00Z',
         jamSelesai: '2026-02-23T10:00:00Z',
         ruangan: 'Ruang A101',
-        kode: 'MK001',
-        nidn: 'NIDN12345',
+        kode: maktulKode,
+        nidn: dosenNidn,
       };
 
       const createRes = await request(app.getHttpServer())
@@ -357,8 +358,8 @@ describe('Jadwal (e2e)', () => {
         jamMulai: '2026-02-26T13:00:00Z',
         jamSelesai: '2026-02-26T15:00:00Z',
         ruangan: 'Ruang C303',
-        kode: 'MK001',
-        nidn: 'NIDN12345',
+        kode: maktulKode,
+        nidn: dosenNidn,
       };
 
       // Create
