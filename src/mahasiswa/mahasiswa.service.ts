@@ -2,13 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { CreateMahasiswaDto } from './dto/create-mahasiswa.dto';
 import { UpdateMahasiswaDto } from './dto/update-mahasiswa.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { generateNIM } from '../common/helpers/id-generator';
 
 @Injectable()
 export class MahasiswaService {
   constructor(private prisma: PrismaService) {}
 
-  create(createMahasiswaDto: CreateMahasiswaDto) {
-    return this.prisma.mahasiswa.create({ data: createMahasiswaDto });
+  async create(createMahasiswaDto: CreateMahasiswaDto) {
+    // Auto-generate NIM
+    const nim = await generateNIM(this.prisma);
+
+    return this.prisma.mahasiswa.create({
+      data: {
+        nim,
+        nama: createMahasiswaDto.nama,
+      },
+    });
   }
 
   findAll() {

@@ -3,6 +3,20 @@
 version: '3.8'
 services:
 
+  # api:
+  #   build: .
+  #   command: npm run start:prod
+  #   restart: always
+  #   ports:
+  #     - '3000:3000'
+  #   volumes:
+  #     - .:/usr/src/app
+  #     - /usr/src/app/node_modules
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - postgres
+
   postgres:
     image: postgres:13.5
     restart: always

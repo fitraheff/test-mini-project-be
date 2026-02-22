@@ -8,27 +8,32 @@ import {
 } from 'class-validator';
 
 export class CreateMaktulDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(3)
-  @MaxLength(10)
-  kode: string;
+  // @IsOptional()
+  // @IsString()
+  // @MinLength(3)
+  // @MaxLength(10)
+  // @ApiProperty({
+  //   description:
+  //     'Kode Mata Kuliah (optional, akan auto-generate jika tidak ada)',
+  //   example: 'MK0001',
+  //   required: false,
+  // })
+  // kode?: string;
 
-  @ApiProperty()
-  @IsString()
   @IsNotEmpty()
+  @IsString()
   @MinLength(3)
   @MaxLength(255)
+  @ApiProperty()
   nama: string;
 
-  @ApiProperty()
-  @IsNumber()
   @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty()
   sks: number;
 
-  @ApiProperty()
-  @IsNumber()
   @IsNotEmpty()
+  @IsNumber()
+  @ApiProperty()
   semester: number;
 }

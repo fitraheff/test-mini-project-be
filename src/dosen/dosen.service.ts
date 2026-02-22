@@ -2,13 +2,22 @@ import { Injectable } from '@nestjs/common';
 import { CreateDosenDto } from './dto/create-dosen.dto';
 import { UpdateDosenDto } from './dto/update-dosen.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { generateNIDN } from '../common/helpers/id-generator';
 
 @Injectable()
 export class DosenService {
   constructor(private prisma: PrismaService) {}
 
-  create(createDosenDto: CreateDosenDto) {
-    return this.prisma.dosen.create({ data: createDosenDto });
+  async create(createDosenDto: CreateDosenDto) {
+    // Auto-generate NIDN
+    const nidn = await generateNIDN(this.prisma);
+
+    return this.prisma.dosen.create({
+      data: {
+        nidn,
+        nama: createDosenDto.nama,
+      },
+    });
   }
 
   findAll() {

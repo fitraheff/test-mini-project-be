@@ -21,7 +21,7 @@ export class DosenController {
 
   @Post()
   @ApiCreatedResponse({ type: DosenEntity })
-  create(@Body() createDosenDto: CreateDosenDto) {
+  async create(@Body() createDosenDto: CreateDosenDto) {
     return this.dosenService.create(createDosenDto);
   }
 

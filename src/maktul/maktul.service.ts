@@ -2,13 +2,24 @@ import { Injectable } from '@nestjs/common';
 import { CreateMaktulDto } from './dto/create-maktul.dto';
 import { UpdateMaktulDto } from './dto/update-maktul.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { generateMataKuliahKode } from '../common/helpers/id-generator';
 
 @Injectable()
 export class MaktulService {
   constructor(private prisma: PrismaService) {}
 
-  create(createMaktulDto: CreateMaktulDto) {
-    return this.prisma.mataKuliah.create({ data: createMaktulDto });
+  async create(createMaktulDto: CreateMaktulDto) {
+    // Auto-generate kode
+    const kode = await generateMataKuliahKode(this.prisma);
+
+    return this.prisma.mataKuliah.create({
+      data: {
+        kode,
+        nama: createMaktulDto.nama,
+        sks: createMaktulDto.sks,
+        semester: createMaktulDto.semester,
+      },
+    });
   }
 
   findAll() {

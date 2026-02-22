@@ -21,7 +21,7 @@ export class MahasiswaController {
 
   @Post()
   @ApiCreatedResponse({ type: MahasiswaEntity })
-  create(@Body() createMahasiswaDto: CreateMahasiswaDto) {
+  async create(@Body() createMahasiswaDto: CreateMahasiswaDto) {
     return this.mahasiswaService.create(createMahasiswaDto);
   }
 
