@@ -24,14 +24,15 @@ export class MaktulController {
 
   @Post()
   @ApiCreatedResponse({ type: MaktulEntity })
-  create(@Body() createMaktulDto: CreateMaktulDto) {
-    return this.maktulService.create(createMaktulDto);
+  async create(@Body() createMaktulDto: CreateMaktulDto) {
+    return new MaktulEntity(await this.maktulService.create(createMaktulDto));
   }
 
   @Get()
   @ApiOkResponse({ type: [MaktulEntity] })
-  findAll() {
-    return this.maktulService.findAll();
+  async findAll() {
+    const maktul = await this.maktulService.findAll();
+    return maktul.map((m) => new MaktulEntity(m));
   }
 
   @Get(':id')
@@ -41,18 +42,23 @@ export class MaktulController {
     if (!maktul) {
       throw new NotFoundException('Mata kuliah not found');
     }
-    return maktul;
+    return new MaktulEntity(maktul);
   }
 
   @Patch(':id')
   @ApiOkResponse({ type: MaktulEntity })
-  update(@Param('id') id: string, @Body() updateMaktulDto: UpdateMaktulDto) {
-    return this.maktulService.update(id, updateMaktulDto);
+  async update(
+    @Param('id') id: string,
+    @Body() updateMaktulDto: UpdateMaktulDto,
+  ) {
+    return new MaktulEntity(
+      await this.maktulService.update(id, updateMaktulDto),
+    );
   }
 
   @Delete(':id')
   @ApiOkResponse({ type: MaktulEntity })
-  remove(@Param('id') id: string) {
-    return this.maktulService.remove(id);
+  async remove(@Param('id') id: string) {
+    return new MaktulEntity(await this.maktulService.remove(id));
   }
 }

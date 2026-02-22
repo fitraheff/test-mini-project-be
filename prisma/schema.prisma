@@ -48,7 +48,7 @@ model Mahasiswa {
 
 model Jadwal{
   id         String     @id @default(cuid())
-  hari       String     @db.VarChar(255)
+  hari       String     @db.VarChar(100)
   jamMulai   DateTime
   jamSelesai DateTime
   ruangan    String     @db.VarChar(50)
@@ -63,16 +63,4 @@ model Jadwal{
 
   createdAt  DateTime @default(now()) @db.Timestamptz(3)
   updatedAt  DateTime @updatedAt @db.Timestamptz(3)
-}
-
-// prisma/schema.prisma
-
-model Article {
-  id          Int      @id @default(autoincrement())
-  title       String   @unique
-  description String?
-  body        String
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }
