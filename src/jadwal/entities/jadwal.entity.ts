@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Jadwal } from '@prisma/client';
-import { MaktulEntity } from 'src/maktul/entities/maktul.entity';
+import { MaktulEntity } from '../../maktul/entities/maktul.entity';
 
 export class JadwalEntity implements Jadwal {
   @ApiProperty()
